@@ -12,44 +12,6 @@ constexpr int headerAddress() {
     return 0;
 }
 
-//template <typename numberType, typename ResultType>
-//class NumberWrapper
-//{
-//protected:
-//    numberType _number;
-//public:
-//    NumberWrapper() = default;
-
-//    static const ResultType fromNumber(numberType u) {
-//        ResultType b;
-//        b._number = u;
-//        return b;
-//    }
-
-//    operator numberType() const { return _number; }
-
-//    ResultType operator +(const int &other) const {return fromNumber(_number + other); }
-//    ResultType operator +(const numberType &other) const {return fromNumber(_number + other); }
-
-//    ResultType &operator ++() { ++_number; return *static_cast<ResultType*>(this); }
-
-//    ResultType &operator =(const numberType &other) { _number = other; }
-//    ResultType &operator =(const ResultType &other) { _number = other._number; }
-
-//    const ResultType operator += (const numberType &other) {return fromNumber(_number += other); }
-//    const ResultType operator -= (const numberType &other) {return fromNumber(_number -= other); }
-
-//    bool operator <(const ResultType &other) const { return _number < other._number; }
-//    bool operator <=(const ResultType &other) const { return _number <= other._number; }
-//};
-
-//class BlockAddress : public NumberWrapper<uint64_t, BlockAddress>
-//{
-//public:
-//    BlockAddress nextBlock() const {return *this + 1; }
-//    // isValid
-//};
-
 using filenameLength_tp = uint32_t;
 using blockAddress_tp = uint64_t;
 using offsetInBlock_tp = uint64_t;

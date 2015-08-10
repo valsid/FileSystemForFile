@@ -88,7 +88,7 @@ void FileSystem::umount()
 void FileSystem::filestat(arguments arg, outputStream out)
 {
     checkArgumentsCount(arg, 1);
-    uint64_t descriptorId = std::stoll(arg.at(0));
+    descriptorIndex_tp descriptorId = static_cast<descriptorIndex_tp>(std::stoll(arg.at(0)));
 
     FSDescriptor descriptor;
     try {
@@ -107,7 +107,7 @@ void FileSystem::filestat(arguments arg, outputStream out)
 
     out << "File statistic: \n\tid: " << descriptorId;
     if(descriptor.type == DescriptorVariant::File) {
-        out << descriptor.fileSize;
+        out << "\n\tSize: " << descriptor.fileSize;
     }
     out << "\n\tType: "     << to_string(descriptor.type) <<
            "\n\tReferences: " << descriptor.referencesCount <<
@@ -142,29 +142,30 @@ void FileSystem::create(arguments arg)
 
 void FileSystem::open(arguments arg, outputStream out)
 {
-//    checkArgumentsCount(arg, 1);
+    checkArgumentsCount(arg, 1);
 
-//    auto descriptorIt = getLastPathElementHandle(arg.at(0));
+    if(_lastFreeFileDescriptor == std::numeric_limits<openedFileDescriptor_tp>::max() ) {
+        // TODO: reimplement descriptor id select, old unused descriptors can be reused,
+        throw file_system_exception("You opened too many files.");
+    }
 
-//    if(_opennedFiles.find(_lastOpennedFileDescriptor + 1) != _opennedFiles.end()) {
-//        throw file_system_exception("You opened too many files.");
-//    }
+    auto descriptor = getLastPathElementDescriptor(arg.at(0));
 
-//    _opennedFiles[++_lastOpennedFileDescriptor] = openedFileStream{descriptorIt.descriptor()};
-
-//    out << "Opened descriptor: " << _lastOpennedFileDescriptor << "\n";
-////    while(_opennedFiles.e_lastOpennedFileDescriptor);
+    auto openedDescriptor = _lastFreeFileDescriptor++;
+    _opennedFiles[openedDescriptor] = openedFileStream{descriptor};
+    out << "Opened file descriptor: " << openedDescriptor << "\n";
 }
 
-void FileSystem::close(arguments arg)
+void FileSystem::close(arguments arg, outputStream out)
 {
     checkArgumentsCount(arg, 1);
-    uint64_t openedDescriptor = std::stoull(arg.at(1));
+    uint64_t descriptorToClose = std::stoull(arg.at(0));
 
-    auto findResult = _opennedFiles.find(openedDescriptor);
+    auto findResult = _opennedFiles.find(descriptorToClose);
     if(findResult  == _opennedFiles.end()) {
         throw file_system_exception("Descriptor currently not open.");
     } else {
+        out << "Descriptor: " << descriptorToClose << " closed.\n";
         _opennedFiles.erase(findResult);
     }
 }
@@ -202,9 +203,9 @@ void FileSystem::unlink(arguments arg, outputStream out)
     string name = arg.at(0);
     descriptorIndex_tp dir = currentDirectory();
     if(removeDescriptorFromDirectory(dir, DescriptorVariant::File | DescriptorVariant::SymLink, name)) {
-        out << "Descriptor deleted\n";
+        out << "Descriptor '" << name << "' deleted from current directory.\n";
     } else {
-        out << "Descriptor not found\n";
+        out << "Descriptor" << name << "is not found\n";
     }
 }
 
@@ -236,8 +237,7 @@ void FileSystem::rmdir(arguments arg, outputStream out)
 void FileSystem::cd(arguments arg)
 {
     checkArgumentsCount(arg, 1);
-    _currentFolder = getLastPathElementHandle(arg.at(0))
-            .descriptorHandle();
+    _currentFolder = getLastPathElementDescriptor(arg.at(0));
 //    auto v = p.getParsedPath();
 }
 
@@ -357,7 +357,6 @@ bool FileSystem::removeDescriptorFromDirectory(descriptorIndex_tp directoryDescr
             } else {
                 throw file_system_exception("Unable to remove '" + name + "'. " + std::to_string(dirDescriptor.type) + " is not " + std::to_string(type) + ".");
             }
-            break;
         }
     }
     return false;
@@ -382,7 +381,7 @@ std::list<string> FileSystem::getDirectoryPathFromDescriptor(descriptorIndex_tp 
             throw std::runtime_error("Error in file format. Entry not found in parent directory.");
         }
         currentHandle = it.descriptor().nextDataSegment;
-    };
+    }
 
     return resultPath;
 }
@@ -406,7 +405,7 @@ void FileSystem::formatFile()
     header.blockByteSize = Constants::blockByteSize();
     uint64_t blockCount = _fsFile->fileSize() / header.blockByteSize;
     if(blockCount < 4) {
-        throw bad_state_exception("File too small.");
+        throw bad_state_exception("File is too small.");
     }
 
 //    TODO: fix magic numbers
@@ -433,14 +432,13 @@ void FileSystem::formatFile()
     fileFormatChanged();
 }
 
-DirectoryDescriptorIterator FileSystem::getLastPathElementHandle(const std::string path)
+descriptorIndex_tp FileSystem::getLastPathElementDescriptor(const std::string path)
 {
     Path p(path);
-    return getLastPathElementHandle(p.getParsedPath(), p.isAbsolute());
+    return getLastPathElementDescriptor(p.getParsedPath(), p.isAbsolute());
 }
 
-// TODO: refactor
-DirectoryDescriptorIterator FileSystem::getLastPathElementHandle(const std::vector<std::string> &path, bool isAbsolute)
+descriptorIndex_tp FileSystem::getLastPathElementDescriptor(const std::vector<std::string> &path, bool isAbsolute)
 {
     descriptorIndex_tp currentHandle = isAbsolute ? header().rootDirectoryDescriptor : currentDirectory();
 
@@ -448,20 +446,20 @@ DirectoryDescriptorIterator FileSystem::getLastPathElementHandle(const std::vect
 
 //    for(const string &currentName: path) {
     for(auto currentName = path.cbegin(); ; ++currentName) {
-        DirectoryDescriptorIterator dIt = getDirectoryDescriptorIterator(currentHandle);
         if(currentName == path.cend()) {
-            return dIt;
+            return currentHandle;
         }
-        bool found = false;
+        DirectoryDescriptorIterator dIt = getDirectoryDescriptorIterator(currentHandle);
+        bool foundNext = false;
         while(dIt.hasNext()) {
             ++dIt;
             if(dIt->name(header().filenameLength) == *currentName) {
-                found = true;
+                foundNext = true;
                 currentHandle = dIt->descriptor;
                 break;
             }
         }
-        if(!found) {
+        if(!foundNext) {
             throw file_system_exception("No such file or directory.");
         }
     }

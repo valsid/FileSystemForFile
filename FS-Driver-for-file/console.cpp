@@ -59,6 +59,7 @@ void Console::run()
 {
     _exit = false;
     consoleCommand command;
+    std::cout << "Type 'help' to get list of all commands.\n";
     while(!_exit) {
         std::cout << "Command: ";
         command = getCommand(getCommands());

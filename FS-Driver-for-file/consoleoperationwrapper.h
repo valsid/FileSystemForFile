@@ -32,7 +32,7 @@ public:
         };
     }
 
-    virtual ~FunctionConsoleOperation() {}
+    virtual ~FunctionConsoleOperation() override {}
 
     virtual void operator()(arguments paramPamPam, outputStream out) override {
         function(paramPamPam, out);

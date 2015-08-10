@@ -20,11 +20,11 @@ using std::string;
 class FileSystem : public ConsoleOperationHandler
 {
     using openedFileDescriptor_tp = uint64_t;
-    using openedFileOffset_tp     = uint64_t;  // WARNING: change to 128 bit integer, if you have filesystem which contains more 2^64 bytes
+    using openedFileOffset_tp     = uint64_t;  // WARNING: change to 128 bit integer, if you have filesystem which contains more than 2^64 bytes
 
 public:
     FileSystem(std::shared_ptr<FormatedFileAccessor> fsFile);
-    ~FileSystem();
+    ~FileSystem() override;
 
     void registerCommands(Console *console) override;
 
@@ -36,7 +36,7 @@ public:
 
     void create(arguments arg);
     void open(arguments arg, outputStream out);
-    void close(arguments arg);
+    void close(arguments arg, outputStream out);
 
     void read(arguments, outputStream);
     void write(arguments);
@@ -94,19 +94,24 @@ private:
 
     blockAddress_tp findAndAllocateFreeDataBlock();
     
-    DirectoryDescriptorIterator getLastPathElementHandle(const std::string path);
-    DirectoryDescriptorIterator getLastPathElementHandle(const std::vector<std::string> &path, bool isAbsolute);
+    descriptorIndex_tp getLastPathElementDescriptor(const std::string path);
+    descriptorIndex_tp getLastPathElementDescriptor(const std::vector<std::string> &path, bool isAbsolute);
 
     DirectoryDescriptorIterator getDirectoryDescriptorIterator(descriptorIndex_tp directoryDescriptorIndex);
 
     struct openedFileStream {
-        FSDescriptor s;
+        descriptorIndex_tp s;
 //        openedFileOffset_tp offset;
+//        FSDescriptor currentDescriptor;
+//        openedFileOffset_tp currentDescriptorOffset;
+
+
         /* flags */
     };
 
     std::unordered_map<openedFileDescriptor_tp, openedFileStream> _opennedFiles;
-    openedFileDescriptor_tp _lastOpennedFileDescriptor = 0;
+    static constexpr openedFileDescriptor_tp initialFileDescriptor = 1;
+    openedFileDescriptor_tp _lastFreeFileDescriptor = initialFileDescriptor;
 
     DescriptorAlgorithms _descriptorAlgo;
 };

@@ -16,15 +16,7 @@ descriptorEnum_tp operator &(const DescriptorVariant &first, const DescriptorVar
 
 uint64_t FSBitMapBlock::findFirstZero(uint64_t begin, uint64_t maxBits) const
 {
-//    auto bitsInOneElement = 8;
-    for(std::uint32_t i = begin; i < maxBits; i++ /*+= bitsInOneElement*/) {
-//        if(bits[i] != 0) {
-//            for(auto j = bitsInOneElement - 1; j >= 0; j--) {
-//                if(bits[i - j] == 1) {
-//                    return i - j;
-//                }
-//            }
-//        }
+    for(uint64_t i = begin; i < maxBits; i++) {
         if(!get(i)) {
             return i;
         }
@@ -67,19 +59,14 @@ std::string std::to_string(DescriptorVariant var)
     switch(var){
     case DescriptorVariant::None:
         return "none";
-        break;
     case DescriptorVariant::File:
         return "file";
-        break;
     case DescriptorVariant::SymLink:
         return "symlink";
-        break;
     case DescriptorVariant::Directory:
         return "directory";
-        break;
     case DescriptorVariant::Any:
         return "Any";
-        break;
     }
 
     if((var & DescriptorVariant::Any) == 0) {
@@ -139,7 +126,7 @@ std::string directoryEntry::name(filenameLength_tp maxFilename) const
     return result;
 }
 
-std::string directoryEntry::toString(uint64_t maxFilename) const
+std::string directoryEntry::toString(filenameLength_tp maxFilename) const
 {
     std::string s;
     s.reserve(sizeof(descriptor) + maxFilename);

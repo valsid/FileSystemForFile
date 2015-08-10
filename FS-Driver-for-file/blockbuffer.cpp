@@ -3,9 +3,9 @@
 #include <stdexcept>
 #include "fileaccessor.h"
 
-#include <iostream>     // debug
+#include <iostream>     // for logs
 
-constexpr bool logEnabled = true;
+constexpr bool logEnabled = false;
 
 BlockBufferLocker::BlockBufferLocker(BlockBufferPool *bufferPool, BlockFileAccessor *file, blockAddress_tp block, SyncType type) :
     _bufferPool(bufferPool),
@@ -110,7 +110,9 @@ void BlockBufferPool::setDefaultBuffersSize(uint64_t size)
     if(!_occupied.empty()) {
         throw bad_state_exception("You cannot change buffer size if you have occupied buffers.");
     }
-    std::cout << "\tSet block size: " << _bufferSize << " -> " << size << "\n";
+    if(logEnabled) {
+        std::clog << "\tSet block size: " << _bufferSize << " -> " << size << "\n";
+    }
     if(_bufferSize != size) {
         _bufferSize = size;
         while(!_free.empty()) {
@@ -127,13 +129,17 @@ uint64_t BlockBufferPool::bufferSize() const
 
 byte_tp *BlockBufferPool::getAnyFreeBuffer()
 {
-    std::cout << "\tlock\n";
+    if(logEnabled) {
+        std::clog << "\tlock\n";
+    }
     return _free.empty() ? lockNewBuffer() : lockFreeBuffer();
 }
 
 void BlockBufferPool::unlockBuffer(byte_tp *buffer)
 {
-    std::cout << "\tunlock " << buffer << "\n";
+    if(logEnabled) {
+        std::clog << "\tunlock " << buffer << "\n";
+    }
     _occupied.erase(buffer);
     _free.push_front(buffer);
 }
@@ -141,7 +147,9 @@ void BlockBufferPool::unlockBuffer(byte_tp *buffer)
 byte_tp *BlockBufferPool::lockFreeBuffer()
 {
     byte_tp *result = _free.front();
-    std::cout << "\tUse old buffer: " << result << "\n";
+    if(logEnabled) {
+        std::clog << "\tUse old buffer: " << result << "\n";
+    }
     _free.pop_front();
     _occupied.insert(result);
     return result;
@@ -150,7 +158,9 @@ byte_tp *BlockBufferPool::lockFreeBuffer()
 byte_tp *BlockBufferPool::lockNewBuffer()
 {
     byte_tp *result = new byte_tp[_bufferSize];
-    std::cout << "\tCreate new buffer[" << _bufferSize << "] -> " << result << "\n";
+    if(logEnabled) {
+        std::clog << "\tCreate new buffer[" << _bufferSize << "] -> " << static_cast<void*>(result) << "\n";
+    }
     _occupied.insert(result);
     return result;
 }

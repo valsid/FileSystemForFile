@@ -59,7 +59,7 @@ void BlockFileAccessor::clearBlocks(blockAddress_tp begin, blockAddress_tp end)
     for(blockAddress_tp i = begin; i <= end; i++) {
         _write(i, zeroBuffer, getBlockSize());
     }
-    delete zeroBuffer;
+    delete[] zeroBuffer;
 }
 
 void BlockFileAccessor::write(blockAddress_tp offset, const FileSystemBlock *block, uint64_t size)

@@ -15,7 +15,7 @@ class Console : public ConsoleOperationHandler
 {
 public:
     Console();
-    ~Console();
+    ~Console() override;
 
     void addCommand(string command, ConsoleOperation *callback);
 

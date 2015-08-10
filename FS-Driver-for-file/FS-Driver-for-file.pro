@@ -12,7 +12,6 @@ SOURCES += main.cpp \
     commandgetter.cpp \
     path.cpp \
     constants.cpp \
-    consoleoperationhandler.cpp \
     filesystemarea.cpp \
     blockbuffer.cpp \
     fsdescriptoriterator.cpp

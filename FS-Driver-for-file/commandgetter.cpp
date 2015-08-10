@@ -83,7 +83,7 @@ int getch_forUnixLike( ) {
 
 consoleCommand getCommand(std::vector<string> helpCommands)
 {
-    char input = ' ';       // Тут зберігається введений користувачем символ
+    char userInput = ' ';
 
     std::list<string> arguments;
 
@@ -91,9 +91,9 @@ consoleCommand getCommand(std::vector<string> helpCommands)
 
     int skipNChar = 0;
 
-    while(input != '\n' || (arguments.empty() && currentText.empty())) {
+    while(userInput != '\n' || (arguments.empty() && currentText.empty())) {
 #ifdef WIN32
-        input = getch();
+        userInput = getch();
 #else
         input = getch_forUnixLike();
 #endif
@@ -101,7 +101,7 @@ consoleCommand getCommand(std::vector<string> helpCommands)
             skipNChar--;
             continue;
         }
-        switch(input) {
+        switch(userInput) {
         case '\b':  // backspace, Windows
         case 127:   // ASCII,     Unix-like
             if(currentText.empty() && !arguments.empty()) {
@@ -123,7 +123,7 @@ consoleCommand getCommand(std::vector<string> helpCommands)
             break;
         case '\r':
         case '\n':
-            input = '\n';
+            userInput = '\n';
             break;
         case '\t':
             if(arguments.empty()) {
@@ -147,17 +147,12 @@ consoleCommand getCommand(std::vector<string> helpCommands)
         case 27:    // Escape, next character is not echoed
             skipNChar = 2;  // TODO: make test. Its work for me
             continue;
-            break;
         default:
-            if(input <= 30) {
-//                cout << "debug: bad symbol: " << (int)input << " - " << input << "_";
-                continue;
-            }
-            currentText += input;
+            currentText += userInput;
             break;
         }
 
-        cout << input;
+        cout << userInput;
     }
 
     arguments.push_back(currentText);
